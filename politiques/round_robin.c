@@ -3,72 +3,90 @@
 #include "process.h"
 
 void round_robin(Process procs[], int n, int QUANTUM) {
-
+     printf("\n════ Bonjouuuuuurrrr═══\n");
+    
     printf("\n═══════════════════════════════════════════════════\n");
     printf("                 ROUND ROBIN (q=%d)\n", QUANTUM);
     printf("═══════════════════════════════════════════════════\n\n");
-
+    
     int time = 0;
     int timeline[1000];
     int timeline_len = 0;
-
     int remaining[n], start[n], end[n];
+    int in_queue[n];  // Track which processes are already in queue
     int done = 0;
-
+    
     for (int i = 0; i < n; i++) {
         remaining[i] = procs[i].duration;
         start[i] = -1;
         end[i] = -1;
+        in_queue[i] = 0;
     }
-
+    
     int queue[100];
     int q_size = 0;
-
+    
+    // Add initial arrivals at time 0
+    for (int i = 0; i < n; i++) {
+        if (procs[i].arrival == 0) {
+            queue[q_size++] = i;
+            in_queue[i] = 1;
+        }
+    }
+    
     while (done < n) {
-
-        for (int i = 0; i < n; i++)
-            if (procs[i].arrival == time)
-                queue[q_size++] = i;
-
         if (q_size == 0) {
             timeline[timeline_len++] = -1;
             time++;
+            // Check for new arrivals during idle time
+            for (int i = 0; i < n; i++) {
+                if (procs[i].arrival == time && !in_queue[i] && remaining[i] > 0) {
+                    queue[q_size++] = i;
+                    in_queue[i] = 1;
+                }
+            }
             continue;
         }
-
+        
         int pid = queue[0];
-
+        // Remove from queue front
         for (int i = 0; i < q_size - 1; i++)
             queue[i] = queue[i+1];
         q_size--;
-
+        in_queue[pid] = 0;
+        
         if (start[pid] == -1)
             start[pid] = time;
-
+        
         int quantum_used = 0;
-
         while (quantum_used < QUANTUM && remaining[pid] > 0) {
             timeline[timeline_len++] = pid;
             remaining[pid]--;
             quantum_used++;
             time++;
-
-            for (int i = 0; i < n; i++)
-                if (procs[i].arrival == time)
+            
+            // Add newly arriving processes
+            for (int i = 0; i < n; i++) {
+                if (procs[i].arrival == time && !in_queue[i] && remaining[i] > 0) {
                     queue[q_size++] = i;
+                    in_queue[i] = 1;
+                }
+            }
         }
-
+        
         if (remaining[pid] > 0) {
+            // Process not finished, add back to queue
             queue[q_size++] = pid;
+            in_queue[pid] = 1;
         } else {
+            // Process finished
             end[pid] = time;
             done++;
         }
     }
-
+    
     printf("CHRONOLOGIE D'EXÉCUTION:\n");
     printf("─────────────────────────\n");
-
     for (int t = 0; t < timeline_len; t++) {
         if (timeline[t] == -1)
             printf("[IDLE:%d→%d] ", t, t+1);
@@ -76,41 +94,37 @@ void round_robin(Process procs[], int n, int QUANTUM) {
             printf("[%s:%d→%d] ", procs[timeline[t]].name, t, t+1);
         if ((t+1)%8==0) printf("\n");
     }
-
+    
     printf("\n\nDIAGRAMME DE GANTT:\n");
     printf("───────────────────\n");
-
     printf("Time ");
     for (int t = 0; t <= timeline_len && t <= 50; t++)
         printf("%2d ", t);
     printf("\n");
-
+    
     for (int i = 0; i < n; i++) {
         printf("%-4s ", procs[i].name);
         for (int t = 0; t < timeline_len && t <= 50; t++)
             printf("%s", timeline[t] == i ? "## " : "   ");
         printf("\n");
     }
-
+    
     printf("\nSTATISTIQUES DES PROCESSUS:\n");
     printf("┌──────┬─────────┬───────┬─────────┬───────┬────────────┬─────────┐\n");
     printf("│ Proc │ Arrivée │ Durée │ Début   │ Fin   │ Turnaround │ Attente │\n");
     printf("├──────┼─────────┼───────┼─────────┼───────┼────────────┼─────────┤\n");
-
+    
     float sumT=0, sumW=0;
-
     for (int i = 0; i < n; i++) {
         int turn = end[i] - procs[i].arrival;
         int wait = turn - procs[i].duration;
-
         sumT+=turn; 
         sumW+=wait;
-
         printf("│ %-4s │ %7d │ %5d │ %7d │ %5d │ %10d │ %7d │\n",
                procs[i].name, procs[i].arrival, procs[i].duration,
                start[i], end[i], turn, wait);
     }
     printf("└──────┴─────────┴───────┴─────────┴───────┴────────────┴─────────┘\n\n");
-     printf("Temps de rotation moyen: %.2f\n", sumT / n);
+    printf("Temps de rotation moyen: %.2f\n", sumT / n);
     printf("Temps d'attente moyen:   %.2f\n\n", sumW / n);
 }
