@@ -4,6 +4,7 @@
 
 void round_robin(Process procs[], int n, int QUANTUM) {
 
+    printf("\n  Bonjouuuuuuuuuuuur \n");
     printf("\n═══════════════════════════════════════════════════\n");
     printf("                 ROUND ROBIN (q=%d)\n", QUANTUM);
     printf("═══════════════════════════════════════════════════\n\n");
