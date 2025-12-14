@@ -267,7 +267,7 @@ static void on_executer_clicked(GtkWidget *widget, gpointer data) {
     executer_politique_gui(app, politique_name, quantum);
 }
 
-// Lancer l'interface GTK
+// Lancer l'interface GTK -------------------------------------------------------------------------------------------------------------------
 void lancer_interface_gtk(Process procs[], int count) {
     gtk_init(NULL, NULL);
     
